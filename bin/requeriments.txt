@@ -1,0 +1,3 @@
+xlrd==1.2.0
+reportlab==3.6.12
+PyPDF2==2.12.1

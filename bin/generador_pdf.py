@@ -14,14 +14,14 @@ parent_folder = os.path.dirname (current_folder)
 files_folder = os.path.join (parent_folder, "files")
 data = os.path.join (files_folder, f"Data.xlsx")
 original_pdf = os.path.join (current_folder, f"Certificado.pdf")
+arial = os.path.join (current_folder, f"arial.ttf")
+arial_bold = os.path.join (current_folder, f"arial_bold.ttf")
 
 def generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, certificado, fecha_caducidad, revision, expediente):
     packet = io.BytesIO()
     # Fonts with epecific path
-    pdfmetrics.registerFont(TTFont('times','times.ttf'))
-    pdfmetrics.registerFont(TTFont('timesbd', 'timesbd.ttf'))
-    pdfmetrics.registerFont(TTFont('arial', 'arial.ttf'))
-    pdfmetrics.registerFont(TTFont('arialbd', 'arial_bold.ttf'))
+    pdfmetrics.registerFont(TTFont('arial', arial))
+    pdfmetrics.registerFont(TTFont('arialbd', arial_bold))
 
     c = canvas.Canvas(packet, letter)
 

@@ -25,11 +25,15 @@ def generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, cert
 
     c = canvas.Canvas(packet, letter)
 
+    width, height = letter
+
     #Página 1
 
+    text_width = c.stringWidth(nombre, 'arialbd', 14)
+    x_position = (width - text_width) / 2
     #Header
     c.setFont('arialbd', 14)
-    c.drawString(254, 579, str(nombre) + " " + str(apellidos))
+    c.drawString(x_position-30, 579, str(nombre) + " " + str(apellidos))
     c.drawString(363, 561, str(dni))
 
     #Middle

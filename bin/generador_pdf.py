@@ -137,14 +137,20 @@ for i in range (1, hoja.nrows):
     apellidos = hoja.cell_value(i, 1)
     dni = hoja.cell_value(i, 2)
     categoria = hoja.cell_value(i, 3)
-    fecha_vigor = datetime(1899, 12, 30) + timedelta(days=hoja.cell_value(i, 4))
-    fecha_vigor = str(fecha_vigor).split(" ")[0]
-    fecha_vigor = fecha_vigor.split("-")[2] + "/" + fecha_vigor.split("-")[1] + "/" + fecha_vigor.split("-")[0].replace("20", "")
+    try:    
+        fecha_vigor = datetime(1899, 12, 30) + timedelta(days=hoja.cell_value(i, 4))
+        fecha_vigor = str(fecha_vigor).split(" ")[0]
+        fecha_vigor = fecha_vigor.split("-")[2] + "/" + fecha_vigor.split("-")[1] + "/" + fecha_vigor.split("-")[0].replace("20", "")
+    except:
+        fecha_vigor = hoja.cell_value(i, 4)
     referencia = hoja.cell_value(i, 5)
     certificado = hoja.cell_value(i, 6)
-    fecha_caducidad = datetime(1899, 12, 30) + timedelta(days=hoja.cell_value(i, 7))
-    fecha_caducidad = str(fecha_caducidad).split(" ")[0]
-    fecha_caducidad = fecha_caducidad.split("-")[2] + "/" + fecha_caducidad.split("-")[1] + "/" + fecha_caducidad.split("-")[0].replace("20", "")
+    try:
+        fecha_caducidad = datetime(1899, 12, 30) + timedelta(days=hoja.cell_value(i, 7))
+        fecha_caducidad = str(fecha_caducidad).split(" ")[0]
+        fecha_caducidad = fecha_caducidad.split("-")[2] + "/" + fecha_caducidad.split("-")[1] + "/" + fecha_caducidad.split("-")[0].replace("20", "")
+    except:
+        fecha_caducidad = hoja.cell_value(i, 7)
     revision = hoja.cell_value(i, 8)
     expediente = hoja.cell_value(i, 9)
     print(fecha_vigor)

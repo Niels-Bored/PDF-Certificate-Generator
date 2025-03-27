@@ -7,7 +7,10 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph
 from datetime import datetime, timedelta
+import textwrap
 
 current_folder = os.path.dirname (__file__)
 parent_folder = os.path.dirname (current_folder)
@@ -17,7 +20,119 @@ original_pdf = os.path.join (current_folder, f"Certificado.pdf")
 arial = os.path.join (current_folder, f"arial.ttf")
 arial_bold = os.path.join (current_folder, f"arial_bold.ttf")
 
-def generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, certificado, fecha_caducidad, revision, expediente):
+
+# Lista de frases que deben ir en negrita
+bold_phrases = [
+    "BÁSICA (IBTB)",
+    "ESPECIALISTA - SISTEMAS DE AUTOMATIZACIÓN (IBTE)",
+    "ESPECIALISTA - LÍNEAS DE DISTRIBUCIÓN  (IBTE)",
+    "ESPECIALISTA - INSTALACIONES EN LOCALES CON RIESGO DE INCENDIO Y EXPLOSIÓN (IBTE)",
+    "ESPECIALISTA - INSTALACIONES EN QUIRÓFANOS Y SALAS DE INTERVENCIÓN (IBTE)",
+    "ESPECIALISTA - INSTALACIONES DE LÁMPARAS DE DESCARGA EN ALTA TENSIÓN Y RÓTULOS LUMINOSOS (IBTE)",
+    "ESPECIALISTA - INSTALACIONES GENERADORAS DE BAJA TENSIÓN DE POTENCIA SUPERIOR O IGUAL A 10 KW (IBTE)"
+]
+
+
+# Función para justificar el texto y resaltar en negritas las frases clave
+def justify_text(c, text, bold_phrases, x, y, width=440, font="Helvetica", font_bold="Helvetica-Bold", font_size=12):
+    c.setFont(font, font_size)
+    
+    words = text.split(" ")  
+    line = []
+    line_width = 0
+    space_width = c.stringWidth(" ", font, font_size)
+    
+    lines = []  # Almacena las líneas ya formadas
+    word_positions = []  # Guarda la posición de cada palabra en la línea
+    
+    for word in words:
+        word_width = c.stringWidth(word, font, font_size)
+        
+        if line_width + word_width <= width:
+            line.append(word)
+            line_width += word_width + space_width
+        else:
+            lines.append(line)
+            line = [word]
+            line_width = word_width + space_width
+    
+    if line:
+        lines.append(line)
+    
+    for line in lines:
+        draw_justified_line(c, line, x, y, width, font, font_bold, font_size, bold_phrases)
+        y -= font_size + 4
+
+# Función para imprimir una línea con justificación y negritas
+def draw_justified_line(c, words, x, y, width, font, font_bold, font_size, bold_phrases):
+    total_spaces = len(words) - 1
+    text_width = sum(c.stringWidth(word, font, font_size) for word in words)
+    
+    if total_spaces > 0:
+        extra_space = (width - text_width) / total_spaces
+    else:
+        extra_space = 0
+    
+    current_x = x
+    for word in words:
+        word_font = font_bold if any(word.replace(",", "").replace("\"","") in phrase and word.isupper() for phrase in bold_phrases) else font
+        c.setFont(word_font, font_size)
+        """ word_font = font_bold if word.isupper() else font
+        c.setFont(word_font, font_size) """
+        
+        c.drawString(current_x, y, word)
+        current_x += c.stringWidth(word, word_font, font_size) + extra_space
+
+def justify_text2(text, max_width, c, x, y, font_name="Helvetica", font_size=12):
+    """
+    Dibuja texto justificado en un canvas de ReportLab.
+    
+    - text: Texto a imprimir
+    - max_width: Ancho máximo de la línea en puntos
+    - c: Objeto canvas de ReportLab
+    - x, y: Coordenadas iniciales
+    """
+    words = text.split()  # Dividir en palabras
+    lines = []
+    current_line = []
+    current_width = 0
+
+    c.setFont(font_name, font_size)
+
+    # Medir y dividir en líneas según el ancho permitido
+    for word in words:
+        word_width = c.stringWidth(word, font_name, font_size)
+        space_width = c.stringWidth(" ", font_name, font_size)
+
+        if current_width + word_width + (space_width if current_line else 0) > max_width:
+            lines.append(current_line)
+            current_line = [word]
+            current_width = word_width
+        else:
+            current_line.append(word)
+            current_width += word_width + (space_width if current_line else 0)
+
+    if current_line:
+        lines.append(current_line)
+
+    # Dibujar cada línea justificada
+    for line in lines:
+        if len(line) == 1:  # Si solo hay una palabra, alinear a la izquierda
+            c.drawString(x, y, line[0])
+        else:
+            total_word_width = sum(c.stringWidth(word, font_name, font_size) for word in line)
+            total_spaces = len(line) - 1
+            extra_space = (max_width - total_word_width) / total_spaces  # Espacio adicional entre palabras
+
+            current_x = x
+            for i, word in enumerate(line):
+                c.drawString(current_x, y, word)
+                current_x += c.stringWidth(word, font_name, font_size) + (extra_space if i < total_spaces else 0)
+
+        y -= font_size + 4  # Ajustar altura para la siguiente línea
+
+
+def generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, certificado, fecha_caducidad, revision, expediente, text):
     packet = io.BytesIO()
     # Fonts with epecific path
     pdfmetrics.registerFont(TTFont('arial', arial))
@@ -33,83 +148,28 @@ def generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, cert
     x_position = (width - text_width) / 2
     #Header
     c.setFont('arialbd', 14)
-    c.drawString(x_position-30, 579, str(nombre) + " " + str(apellidos))
-    c.drawString(363, 561, str(dni))
+    c.drawString(x_position, 590, str(nombre) + " " + str(apellidos))
+    c.drawString(377, 572, str(dni))
 
     #Middle
     c.setFont('arial', 14)
-    text = "de acuerdo con los requisitos establecidos en la Instrucción Técnica IT07 Revisión 4: “Competencia técnica de los instaladores en Baja Tensión”, conforme a los contenidos detallados en el Apéndice II de la ITCBT-03 del Reglamento Electrotécnico para Baja Tensión aprobado por el Real Decreto 842/2002, 18 de septiembre modificado por el Real Decreto 298/2021, de 27 de abril."
-    
-    c.drawString(140, 470, "Para la categoría ")
-    
-    c.setFont('arialbd', 13)
-    if len(categoria) > 20:
-        c.drawString(250, 470, str(categoria[0:44]))
-        c.drawString(140, 453, str(categoria[44:len(categoria)].strip()))
-    else:
-        c.drawString(250, 470, str(categoria))
-    c.setFont('arial', 13)
 
-    if categoria == 'BÁSICA (IBTB)':
-        c.drawString(342, 470, " de acuerdo con los requisitos estable-")
-        c.drawString(140, 453, "cidos en la Instrucción Técnica IT07 Revisión 4: “Competencia técnica de")
-        c.drawString(140, 436, "los instaladores en Baja Tensión”, conforme a los contenidos detallados")
-        c.drawString(140, 419, "en el Apéndice II de la ITCBT-03 del Reglamento Electrotécnico para")
-        c.drawString(140, 402, "Baja Tensión aprobado por el Real Decreto 842/2002, 18 de septiembre")
-        c.drawString(140, 385, "modificado por el Real Decreto 298/2021, de 27 de abril.")
-    elif categoria == 'ESPECIALISTA - "Sistemas de Automatización" (IBTE)':
-        c.drawString(182, 453, "de acuerdo con los requisitos establecidos en la Instrucción Téc-")
-        c.drawString(140, 436, "nica IT07 Revisión 4: “Competencia técnica de los instaladores en Baja")
-        c.drawString(140, 419, "Tensión”, conforme a los contenidos detallados en el Apéndice II de la")
-        c.drawString(140, 402, "ITCBT-03 del Reglamento Electrotécnico para BajaTensión aprobado")
-        c.drawString(140, 385, "por el Real Decreto 842/2002, 18 de septiembre modificado por el Real")
-        c.drawString(140, 368, "Decreto 298/2021, de 27 de abril.")
-    elif categoria == 'ESPECIALISTA - "Líneas de Distribución BT"  (IBTE)':
-        c.drawString(182, 453, "de acuerdo con los requisitos establecidos en la Instrucción Téc-")
-        c.drawString(140, 436, "nica IT07 Revisión 4: “Competencia técnica de los instaladores en Baja")
-        c.drawString(140, 419, "Tensión”, conforme a los contenidos detallados en el Apéndice II de la")
-        c.drawString(140, 402, "ITCBT-03 del Reglamento Electrotécnico para BajaTensión aprobado")
-        c.drawString(140, 385, "por el Real Decreto 842/2002, 18 de septiembre modificado por el Real")
-        c.drawString(140, 368, "Decreto 298/2021, de 27 de abril.")
-    elif categoria == 'ESPECIALISTA - "Instalaciones en locales con riesgo de incendio y explosión" (IBTE)':
-        c.drawString(382, 453, "de acuerdo con los requisitos")
-        c.drawString(140, 436, "establecidos en la Instrucción Técnica IT07 Revisión 4: “Competencia")
-        c.drawString(140, 419, "técnica de los instaladores en Baja Tensión”, conforme a los contenidos")
-        c.drawString(140, 402, "detallados en el Apéndice II de la ITCBT-03 del Reglamento Electrotéc-")
-        c.drawString(140, 385, "nico para Baja Tensión aprobado por el Real Decreto 842/2002, 18 de")
-        c.drawString(140, 368, "septiembre modificado por el Real Decreto 298/2021, de 27 de abril.")
-    elif categoria == 'ESPECIALISTA - "Instalaciones en quirófanos y salas de intervención" (IBTE)':
-        c.drawString(335, 453, "de acuerdo con los requisitos esta-")
-        c.drawString(140, 436, "blecidos en la Instrucción Técnica IT07 Revisión 4: “Competencia téc-")
-        c.drawString(140, 419, "nica de los instaladores en Baja Tensión”, conforme a los contenidos")
-        c.drawString(140, 402, "detallados en el Apéndice II de la ITCBT-03 del Reglamento Electrotéc-")
-        c.drawString(140, 385, "nico para Baja Tensión aprobado por el Real Decreto 842/2002, 18 de")
-        c.drawString(140, 368, "septiembre modificado por el Real Decreto 298/2021, de 27 de abril.")
-    elif categoria == 'ESPECIALISTA - "Instalaciones de lámparas de descarga en alta tensión y rótulos luminosos" (IBTE)':
-        c.drawString(470, 453, "de acuerdo con")
-        c.drawString(140, 436, "los requisitos establecidos en la Instrucción Técnica IT07 Revisión 4: “Com-")
-        c.drawString(140, 419, "petencia técnica de los instaladores en Baja Tensión”, conforme a los con-")
-        c.drawString(140, 402, "tenidos detallados en el Apéndice II de la ITCBT-03 del Reglamento Electro-")
-        c.drawString(140, 385, "técnico para Baja Tensión aprobado por el Real Decreto 842/2002, 18 de")
-        c.drawString(140, 368, "septiembre modificado por el Real Decreto 298/2021, de 27 de abril.")
-    elif categoria == 'ESPECIALISTA - "Instalaciones generadoras de baja tensión de potencia superior o igual a 10 Kw" (IBTE)':
-        c.drawString(498, 453, "de acuer-")
-        c.drawString(140, 436, "do con los requisitos establecidos en la Instrucción Técnica IT07 Revi-")
-        c.drawString(140, 419, "sión 4: “Competencia técnica de los instaladores en Baja Tensión”, con-")
-        c.drawString(140, 402, "forme a los contenidos detallados en el Apéndice II de la ITCBT-03 del")
-        c.drawString(140, 385, "Reglamento Electrotécnico para Baja Tensión aprobado por el Real De-")
-        c.drawString(140, 368, "creto 842/2002, 18 de septiembre modificado por el Real Decreto")
-        c.drawString(140, 351, "298/2021, de 27 de abril.")
+
+    
+    #justify_text(text, max_width=440, c=c, x=152, y=470)
+    justify_text(c, text, bold_phrases, font = "arial", font_bold="arialbd", x=152, y=470)
+
+    
     c.setFont('arialbd', 12)
-    c.drawString(288, 306, str(fecha_vigor))
+    c.drawString(402, 339.5, str(fecha_vigor))
 
     #Footer
     c.setFont('arial', 11)
-    c.drawString(50, 27, str(referencia))
-    c.drawString(340, 27, str(certificado))
-    c.drawString(508, 27, str(fecha_caducidad))
+    c.drawString(72, 38, str(referencia))
+    c.drawString(370, 38, str(certificado))
+    c.drawString(535, 38, str(fecha_caducidad))
     c.setFont('arialbd', 9)
-    c.drawString(500, 10, str(revision))
+    c.drawString(510, 23.5, str(revision))
 
     c.showPage()
     c.save()
@@ -157,9 +217,11 @@ for i in range (1, hoja.nrows):
         fecha_caducidad = hoja.cell_value(i, 7)
     revision = hoja.cell_value(i, 8)
     expediente = hoja.cell_value(i, 9)
+    text = hoja.cell_value(i, 10)
     print(fecha_vigor)
     print(fecha_caducidad)
+    print(text)
     print("_______________________________")
-    generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, certificado, fecha_caducidad, revision, expediente)
+    generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, certificado, fecha_caducidad, revision, expediente,text)
 print("Documentos generados correctamente")    
 input()

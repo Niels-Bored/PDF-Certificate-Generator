@@ -21,118 +21,7 @@ arial = os.path.join (current_folder, f"arial.ttf")
 arial_bold = os.path.join (current_folder, f"arial_bold.ttf")
 
 
-# Lista de frases que deben ir en negrita
-bold_phrases = [
-    "BÁSICA (IBTB)",
-    "ESPECIALISTA - SISTEMAS DE AUTOMATIZACIÓN (IBTE)",
-    "ESPECIALISTA - LÍNEAS DE DISTRIBUCIÓN  (IBTE)",
-    "ESPECIALISTA - INSTALACIONES EN LOCALES CON RIESGO DE INCENDIO Y EXPLOSIÓN (IBTE)",
-    "ESPECIALISTA - INSTALACIONES EN QUIRÓFANOS Y SALAS DE INTERVENCIÓN (IBTE)",
-    "ESPECIALISTA - INSTALACIONES DE LÁMPARAS DE DESCARGA EN ALTA TENSIÓN Y RÓTULOS LUMINOSOS (IBTE)",
-    "ESPECIALISTA - INSTALACIONES GENERADORAS DE BAJA TENSIÓN DE POTENCIA SUPERIOR O IGUAL A 10 KW (IBTE)"
-]
-
-
-# Función para justificar el texto y resaltar en negritas las frases clave
-def justify_text(c, text, bold_phrases, x, y, width=440, font="Helvetica", font_bold="Helvetica-Bold", font_size=12):
-    c.setFont(font, font_size)
-    
-    words = text.split(" ")  
-    line = []
-    line_width = 0
-    space_width = c.stringWidth(" ", font, font_size)
-    
-    lines = []  # Almacena las líneas ya formadas
-    word_positions = []  # Guarda la posición de cada palabra en la línea
-    
-    for word in words:
-        word_width = c.stringWidth(word, font, font_size)
-        
-        if line_width + word_width <= width:
-            line.append(word)
-            line_width += word_width + space_width
-        else:
-            lines.append(line)
-            line = [word]
-            line_width = word_width + space_width
-    
-    if line:
-        lines.append(line)
-    
-    for line in lines:
-        draw_justified_line(c, line, x, y, width, font, font_bold, font_size, bold_phrases)
-        y -= font_size + 4
-
-# Función para imprimir una línea con justificación y negritas
-def draw_justified_line(c, words, x, y, width, font, font_bold, font_size, bold_phrases):
-    total_spaces = len(words) - 1
-    text_width = sum(c.stringWidth(word, font, font_size) for word in words)
-    
-    if total_spaces > 0:
-        extra_space = (width - text_width) / total_spaces
-    else:
-        extra_space = 0
-    
-    current_x = x
-    for word in words:
-        word_font = font_bold if any(word.replace(",", "").replace("\"","") in phrase and word.isupper() for phrase in bold_phrases) else font
-        c.setFont(word_font, font_size)
-        """ word_font = font_bold if word.isupper() else font
-        c.setFont(word_font, font_size) """
-        
-        c.drawString(current_x, y, word)
-        current_x += c.stringWidth(word, word_font, font_size) + extra_space
-
-def justify_text2(text, max_width, c, x, y, font_name="Helvetica", font_size=12):
-    """
-    Dibuja texto justificado en un canvas de ReportLab.
-    
-    - text: Texto a imprimir
-    - max_width: Ancho máximo de la línea en puntos
-    - c: Objeto canvas de ReportLab
-    - x, y: Coordenadas iniciales
-    """
-    words = text.split()  # Dividir en palabras
-    lines = []
-    current_line = []
-    current_width = 0
-
-    c.setFont(font_name, font_size)
-
-    # Medir y dividir en líneas según el ancho permitido
-    for word in words:
-        word_width = c.stringWidth(word, font_name, font_size)
-        space_width = c.stringWidth(" ", font_name, font_size)
-
-        if current_width + word_width + (space_width if current_line else 0) > max_width:
-            lines.append(current_line)
-            current_line = [word]
-            current_width = word_width
-        else:
-            current_line.append(word)
-            current_width += word_width + (space_width if current_line else 0)
-
-    if current_line:
-        lines.append(current_line)
-
-    # Dibujar cada línea justificada
-    for line in lines:
-        if len(line) == 1:  # Si solo hay una palabra, alinear a la izquierda
-            c.drawString(x, y, line[0])
-        else:
-            total_word_width = sum(c.stringWidth(word, font_name, font_size) for word in line)
-            total_spaces = len(line) - 1
-            extra_space = (max_width - total_word_width) / total_spaces  # Espacio adicional entre palabras
-
-            current_x = x
-            for i, word in enumerate(line):
-                c.drawString(current_x, y, word)
-                current_x += c.stringWidth(word, font_name, font_size) + (extra_space if i < total_spaces else 0)
-
-        y -= font_size + 4  # Ajustar altura para la siguiente línea
-
-
-def generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, certificado, fecha_caducidad, revision, expediente, text):
+def generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, certificado, fecha_caducidad, revision, expediente):
     packet = io.BytesIO()
     # Fonts with epecific path
     pdfmetrics.registerFont(TTFont('arial', arial))
@@ -154,22 +43,14 @@ def generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, cert
     #Middle
     c.setFont('arial', 14)
 
-
-    
-    #justify_text(text, max_width=440, c=c, x=152, y=470)
-    justify_text(c, text, bold_phrases, font = "arial", font_bold="arialbd", x=152, y=470)
-
-    
     c.setFont('arialbd', 12)
-    c.drawString(402, 339.5, str(fecha_vigor))
+    c.drawString(402, 334.5, str(fecha_vigor))
 
     #Footer
     c.setFont('arial', 11)
-    c.drawString(72, 38, str(referencia))
-    c.drawString(370, 38, str(certificado))
-    c.drawString(535, 38, str(fecha_caducidad))
-    c.setFont('arialbd', 9)
-    c.drawString(510, 23.5, str(revision))
+    c.drawString(67, 38, str(referencia))
+    c.drawString(367, 38, str(certificado))
+    c.drawString(532, 38, str(fecha_caducidad))
 
     c.showPage()
     c.save()
@@ -217,11 +98,9 @@ for i in range (1, hoja.nrows):
         fecha_caducidad = hoja.cell_value(i, 7)
     revision = hoja.cell_value(i, 8)
     expediente = hoja.cell_value(i, 9)
-    text = hoja.cell_value(i, 10)
     print(fecha_vigor)
     print(fecha_caducidad)
-    print(text)
     print("_______________________________")
-    generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, certificado, fecha_caducidad, revision, expediente,text)
+    generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, certificado, fecha_caducidad, revision, expediente)
 print("Documentos generados correctamente")    
 input()

@@ -33,8 +33,14 @@ def generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, cert
 
     #Página 1
 
-    text_width = c.stringWidth(nombre, 'arialbd', 14)
+    text_width = c.stringWidth(nombre +" "+apellidos, 'arialbd', 14)
     x_position = (width - text_width) / 2
+
+    print(f"width: {width}")
+    print(f"text width: {text_width}")
+    print(f"x position: {x_position}")
+    x_position+= 70
+    print(f"x position adjustment: {x_position}")
     #Header
     c.setFont('arialbd', 14)
     c.drawString(x_position, 590, str(nombre) + " " + str(apellidos))

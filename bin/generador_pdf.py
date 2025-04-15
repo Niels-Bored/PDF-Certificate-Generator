@@ -50,7 +50,7 @@ def generatePDF(nombre, apellidos, dni, categoria, fecha_vigor, referencia, cert
     c.setFont('arial', 14)
 
     c.setFont('arialbd', 12)
-    c.drawString(402, 334.5, str(fecha_vigor))
+    c.drawString(402, 263, str(fecha_vigor))
 
     #Footer
     c.setFont('arial', 11)

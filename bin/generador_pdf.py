@@ -182,7 +182,7 @@ def generatePDF(
         c=c,
         text=footer,
         x=152,
-        y=100,
+        y=125,
         bold_phrases=bold_phrases,
         font="arial",
         font_bold="arialbd",

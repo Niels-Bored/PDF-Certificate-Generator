@@ -135,7 +135,8 @@ def generatePDF(
     revision,
     expediente,
     text,
-    footer
+    footer,
+    title
 ):
     packet = io.BytesIO()
     # Fonts with epecific path
@@ -160,6 +161,28 @@ def generatePDF(
     c.setFont("arialbd", 14)
     c.drawString(x_position, 590, str(nombre) + " " + str(apellidos))
     c.drawString(377, 572, str(dni))
+
+    text_width = c.stringWidth(title, "arialbd", 20)
+    
+    if text_width > 400:
+        title_1 = title[0:27]
+        title_2 = title[27:]
+        text_width_1 = c.stringWidth(title_1, "arialbd", 20)
+        text_width_2 = c.stringWidth(title_2, "arialbd", 20)
+        x_position_1 = (width - text_width_1) / 2
+        x_position_2 = (width - text_width_2) / 2
+        x_position_1 += 70
+        x_position_2 += 70
+        c.setFont("arialbd", 20)
+        c.drawString(x_position_1, 515, title_1)
+        c.drawString(x_position_2, 492, title_2)
+    else:
+    
+        x_position = (width - text_width) / 2
+        x_position += 70
+
+        c.setFont("arialbd", 20)
+        c.drawString(x_position, 515, title)
 
     # Middle
     c.setFont("arial", 14)
@@ -257,10 +280,12 @@ for i in range(1, hoja.nrows):
     expediente = hoja.cell_value(i, 9)
     text = hoja.cell_value(i, 10)
     footer = hoja.cell_value(i, 11)
+    title = hoja.cell_value(i, 12)
     print(fecha_vigor)
     print(fecha_caducidad)
     print(text)
     print(footer)
+    print(title)
     print("_______________________________")
     generatePDF(
         nombre,
@@ -274,7 +299,8 @@ for i in range(1, hoja.nrows):
         revision,
         expediente,
         text,
-        footer
+        footer,
+        title
     )
 print("Documentos generados correctamente")
 input()
